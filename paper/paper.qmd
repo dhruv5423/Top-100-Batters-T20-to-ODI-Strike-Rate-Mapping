@@ -1,0 +1,75 @@
+---
+title: "Predicting Goodreads Ratings Across Genres"
+subtitle: "My subtitle if needed"
+author: 
+  - Dhruv Gupta
+thanks: "Code and data are available at: https://github.com/dhruv5423/GoodReads-Cross-Genre-Predictions"
+date: today
+date-format: long
+toc: true
+abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+format: pdf
+number-sections: true
+bibliography: references.bib
+---
+
+# Introduction
+
+Goodreads, founded in 2006, boasts over 150 million users and is perhaps the most popular online community for4 readers. At it's heart, Goodreads is akin to a reader's social media platform, allowing them to display, discover, review, and catalog books they love (or hate) across multiple different genres.
+
+Personal Motivation
+
+Estimand
+
+Results
+
+Broader Context
+
+
+# Data 
+
+## Sourcing
+
+## Note on Measurement
+
+## Outcome Variables
+
+## Predictor Variables
+
+# Model
+
+The goal of our modelling strategy is twofold. Firstly,...
+
+Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+## Model Set-Up
+
+### Model Justification
+
+# Results
+
+# Discussion
+
+## First Discussion Point
+
+## Second Discussion Point 
+
+## Third Discussion Point
+
+## Weaknesses and Next Steps
+
+\newpage
+
+# Appendix
+
+# Addtional Data Details
+
+# Model Details
+
+## Posterior Predictive Check
+
+## Diagnostics
+
+\newpage
+
+# References
+
