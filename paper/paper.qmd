@@ -15,7 +15,7 @@ bibliography: references.bib
 
 # Introduction
 
-
+Overview
 
 Personal Motivation
 
@@ -41,9 +41,12 @@ Broader Context
 The goal of our modelling strategy is twofold. Firstly,...
 
 Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+
+
+
 ## Model Set-Up
 
-### Model Justification
+## Model Justification
 
 # Results
 
