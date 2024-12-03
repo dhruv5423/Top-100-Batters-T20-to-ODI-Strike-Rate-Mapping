@@ -1,9 +1,9 @@
 ---
-title: "Predicting Goodreads Ratings Across Genres"
+title: "How Well Do Strike Rates Translate from T20 to ODI Formats for Top 100 vs. Non-Top 100 players?"
 subtitle: "My subtitle if needed"
 author: 
   - Dhruv Gupta
-thanks: "Code and data are available at: https://github.com/dhruv5423/GoodReads-Cross-Genre-Predictions"
+thanks: "Code and data are available at: https://github.com/dhruv5423/Top-100-Batters-T20-to-ODI-Strike-Rate-Mapping"
 date: today
 date-format: long
 toc: true
@@ -15,7 +15,7 @@ bibliography: references.bib
 
 # Introduction
 
-Goodreads, founded in 2006, boasts over 150 million users and is perhaps the most popular online community for4 readers. At it's heart, Goodreads is akin to a reader's social media platform, allowing them to display, discover, review, and catalog books they love (or hate) across multiple different genres.
+
 
 Personal Motivation
 
