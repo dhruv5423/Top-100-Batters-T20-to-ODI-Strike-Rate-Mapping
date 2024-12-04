@@ -12,12 +12,88 @@ format: pdf
 number-sections: true
 bibliography: references.bib
 ---
+```{r}
+#| include: false
+#| warning: false
+#| message: false
 
+#Loading Packages
+library(tidyverse)
+library(lintr)
+library(lme4)
+library(here)
+library(dplyr)
+library(arrow)
+library(knitr)
+library(tinytex)
+library(kableExtra)
+library(janitor)
+
+# Set the file path
+file_path <- here::here("data", "processed_data", "combined_odi_data.csv")
+
+# Load the data and clean column names
+combined_odi_data <- read.csv(file_path) %>%
+  clean_names()  # Standardize column names
+
+# Function to clean column names for display
+format_column_names <- function(data) {
+  colnames(data) <- gsub("_", " ", colnames(data))   # Replace underscores with spaces
+  colnames(data) <- tools::toTitleCase(colnames(data)) # Capitalize words
+  return(data)
+}
+
+# Set seed for reproducibility
+set.seed(324)
+
+# Display random rows of the data in split tables with cleaned column names
+# Match Information
+match_info <- combined_odi_data %>%
+  select(match_id, season, start_date, venue, innings, ball) %>%
+  sample_n(3) %>%
+  format_column_names()
+
+# Batting and Bowling Teams
+bat_bowl_info <- combined_odi_data %>%
+  select(batting_team, bowling_team, striker, non_striker, bowler) %>%
+  sample_n(3) %>%
+  format_column_names()
+
+# Runs and Extras
+runs_extras_info <- combined_odi_data %>%
+  select(runs_off_bat, extras, wides, noballs, byes, legbyes, penalty) %>%
+  sample_n(3) %>%
+  format_column_names()
+
+# Wicket Details
+wicket_info <- combined_odi_data %>%
+  select(wicket_type, player_dismissed, other_wicket_type, other_player_dismissed) %>%
+  sample_n(3) %>%
+  format_column_names()
+
+# Define the path to the final analysis data
+file_path <-  here::here("data", "processed_data", "final_analysis_data.parquet")
+
+# Load the final analysis data
+final_data <- read_parquet(file_path)
+
+# Load the model data
+model_data_path <- here::here("data", "processed_data", "final_analysis_data.parquet")
+model_data <- read_parquet(model_data_path)
+
+# Load the saved model
+model_path <- here::here("models", "strike_rate_model_simple.rds")
+strike_rate_model <- readRDS(model_path)
+
+```
 # Introduction
 
-Overview
+The sport of cricket has evolved greatly in recent times. Traditionally played over the course of 5 days, new, shorter formats are becoming increasingly popular due to their accessibility and faster pace of play. One Day International (ODI) and T20 formats are foremost among these formats - consisting of one innings of 50 overs and 20 overs respectively for either side. [@icc_three] All three formats, Test, ODI, and T20 present different challenges and require different skill-sets. Lasting 5 days, test matches require endurance, patience and strategy. In comparison, T20 cricket is much more exciting, with batsmen 'aiming for boundaries' as the teams try to score as many runs as possible in this short format. ODI cricket is a balance of the two - while relatively fast, strategy is key and slower play is more prevalent. [@behind] 
 
-Personal Motivation
+A batter's strike rate is a key performance indicator of their ability to score runs. It is defined as the 'runs per 100 balls' they face. [@sportmakers] For example, if a batter scores 100 runs in 50 balls, their strike rate can be calculated to be 200. Given the differences in strategy between formats, it is common to expect differences in strike rates. Longer formats generally have lower strike rates, and shorter formats higher. But how well do strike rates translate across formats, particularly for top-performing players compared to the rest of field? This is of particular interest, not only in evaluating individual player adaptability, but in understanding how skills in one format can be extrapolated to another.
+
+This paper aims to investigate whether how well strike rates translate from T20 to ODI formats, for top-performing players compared to their peers. Specifically, we aim to estimate the difference in ODI strike rate attributable to 1) T20 Strike Rates, 2) Player Group (whether they are a top performing batter or not), and 3) the interaction between the two factors. Our estimate is the conditional effect of T20 Strike Rate on ODI Strike Rate, adjusted for player type, while accounting for player-specific variability.
+
 
 Estimand
 
@@ -25,32 +101,421 @@ Results
 
 Broader Context
 
+The rest of paper is structured as follows..
 
-# Data 
+# Data {#sec-data}
 
-## Sourcing
+## Data Selection and Sourcing
 
-## Note on Measurement
+Data used in this paper has been sourced from the reputable cricket database, CricSheet, [@cricsheet]. Created by Stephen Rushe, CricSheet is an open-source platform providing detail ball-by-ball data for 17,944 cricket matches. Contained in the database were 2,858 One Day International matches and 3,856 T20 International matches. This paper focuses on the male cricket matches, with 2,391 Male ODIs and 2,499 Male T20 match data downloaded as CSV files. This data set is particularly well-suited for this study because it ensures consistent measurement across matches, detailed coverage of player-level performance, and a large sample size, enabling robust statistical analysis of performance differences across formats.
 
-## Outcome Variables
+Additional details on the data selection process and a step-by-step guide to access and download the data are provided in [@sec-data-details].
 
-## Predictor Variables
+## Raw Data
 
-# Model
+Below are samples from the raw data regarding ODI matches after all raw csv files of individual match data were combined. The data is split into logical groups for clarity, but are all part of the same data frame.
 
-The goal of our modelling strategy is twofold. Firstly,...
+### Match Information
 
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+@tbl-raw1 contains basic information about the match: match ID, season, start date, venue, innings, and ball. So, the first row would give match information of Match ID 1131279 at the ICC Academy in the 2017/2018 season, on the 1st of January 2023. The ball that the data captured is the 4th ball from the 44th over, in the first innings.
+
+```{r}
+#| label: tbl-raw1
+#| tbl-cap: "Raw Data - Sample Match Information"
+#| echo: false
+#| warning: false
+#| message: false
+
+# Display match information
+knitr::kable(match_info, row.names = FALSE)
+```
+
+### Batting and Bowling Teams
+@tbl-raw2 is about the batting team, bowling team, and key players involved at the time of the delivery. The first row can be understood to show that the time of delivery 44.4 of Match 1131279 (correponding to row 1 in @tbl-raw1), the batting team is India, the bowling team is New Zealand, the Striker is V Kohli, the other batsman (or the non-striker) is SS Iyer, and the Bowler is TA Boult. 
+```{r}
+#| label: tbl-raw2
+#| tbl-cap: "Raw Data - Sample Batting and Bowling Teams Information"
+#| echo: false
+#| warning: false
+#| message: false
+
+# Display batting and bowling teams information
+knitr::kable(bat_bowl_info, row.names = FALSE)
+```
+
+### Runs and Extras
+@tbl-raw3 contains the runs scored, extras such as wides, no-balls, byes, leg-byes, and penalties. So for the same ball in @tbl-raw1 and @tbl-raw2, 1 run was scored by V Kohli. There were no extras, wides, no balls, byes, legbyes, or penalties.
+```{r}
+#| label: tbl-raw3
+#| tbl-cap: "Raw Data - Sample Runs and Extras Information"
+#| echo: false
+#| warning: false
+#| message: false
+
+# Display runs and extras information
+knitr::kable(runs_extras_info, row.names = FALSE)
+```
+
+### Wicket Details
+@tbl-raw4 contains information about wickets, including the type of dismissal and the players involved. For each of the 3 balls displayed in this sample there were no wickets or players dismissed.
+```{r}
+#| label: tbl-raw4
+#| tbl-cap: "Raw Data - Sample Wicket Details"
+#| echo: false
+#| warning: false
+#| message: false
+
+# Display wicket details information
+knitr::kable(wicket_info, row.names = FALSE)
+```
 
 
+## Cleaning 
+
+### Desired Structure of Analysis Data
+Refer to the "Sketches" section of the repository. There was an understanding of how the dataset needed to be transformed in order to get it ready for analysis through our model. he desired structure of the data aimed to include the following key variables: player name, player type, match type, strike rate, and total balls faced. Below is an example of a representation of the desired structure:
+
+```{r}
+#| label: tbl-desired
+#| tbl-cap: "Desired Structure of Analysis Data"
+#| echo: false
+#| warning: false
+#| message: false
+
+library(knitr)
+library(kableExtra)
+
+# Example of the desired table structure
+desired_structure <- data.frame(
+  Player = c("Player A", "Player A", "Player B", "Player B"),
+  Player_Type = c("Top 100", "Top 100", "Non-Top 100", "Non-Top 100"),
+  Match_Type = c("T20", "ODI", "T20", "ODI"),
+  Strike_Rate = c(140.0, 90.0, 120.0, 75.0),
+  Total_Balls_Faced = c(1200, 1200, 800, 800)
+)
+
+# Clean column names to remove underscores
+colnames(desired_structure) <- gsub("_", " ", colnames(desired_structure))
+
+# Create the table
+kable(desired_structure, align = 'lccrr') %>%
+  kable_styling(full_width = FALSE, position = "center")
+```
+
+### Filtering on Balls Faced
+
+The first step after downloading raw data files and combining them into large T20 and ODI ball by ball data files was to filter players who had a large enough sample size across formats. That is to say, only those who meaningfully participated. Importantly we wanted to exclude players whose sample size of balls faced were too few, as these observations could skew the findings from the paper. Therefore, players were required to meet a minimum threshold of 200 balls faced in T20 matches and 500 balls faced in ODI matches. The combined balls faced in both formats needed to be above a threshold of 700. In doing so, we avoid noise from low-sample sizes. The library dplyr, [@R-dplyr], was used to filter and aggregate the data.
+
+### Calculating Average Strike Rates, Identifying Top 100 Players
+
+The 'mean' function was used to calculate the average T20 Strike Rate and average ODI strike rate. Missing or null values were exlcuded using 'na.rm = TRUE'. 
+
+Because part of are model is concerned with differences between top performing players and their peers, we obtain the Top 100 batsmen before y ranking them based on the average of their T20 and ODI strike rates. Here, the 'mutate' function was used to calculate ranks and assign each player as either 'Top 100', or 'Non-Top 100'. 
+
+### Structuring the Final Dataset
+
+The arrow package was used to save the cleaned data set as a Parquet file. [@R-arrow] The final cleaned dataset now included the columns "Player", "Player Type", "Match Type", "Strike Rate", "Total Balls Faced". @tbl-analysis-sample contains a sample of the first 5 rows of the final analysis data.
+
+```{r}
+#| label: tbl-analysis-sample
+#| tbl-cap: "Sample of Analysis Data"
+#| echo: false
+#| warning: false
+#| message: false
+
+library(dplyr)
+library(knitr)
+
+# Set seed for reproducibility
+set.seed(42)
+
+# Randomly sample 5 rows from the loaded data
+sample_data <- final_data %>%
+  sample_n(5)
+
+# Rename columns for clarity
+colnames(sample_data) <- c("Striker", "T20 Strike Rate", "ODI Strike Rate", "Total Balls Faced", "Player Type")
+
+# Display the table
+knitr::kable(sample_data, row.names = FALSE)
+
+```
+
+## Summary of Analaysis Data
+
+After getting the data ready for analysis, it may be useful to visualize the data before we run the model. @fig-bar-analysis displays the average strike rates for both match types, for both player groups. As expected, we find that Top 100 players have higher strike rates than Non-Top 100 players. 
+
+```{r}
+#| label: fig-bar-analysis
+#| fig-cap: "T20 vs. ODI Average Strike Rates by Player Group"
+#| fig.width: 6
+#| fig.height: 4
+#| fig.align: center
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-pos: "H"
+
+library(ggplot2)
+library(dplyr)
+
+# Calculate average strike rates for each player type and match type
+average_strike_rates <- final_data %>%
+  group_by(player_type) %>%
+  summarise(
+    T20 = mean(t20_strike_rate, na.rm = TRUE),
+    ODI = mean(odi_strike_rate, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(T20, ODI),
+    names_to = "Match_Type",
+    values_to = "Average_Strike_Rate"
+  )
+
+# Create the bar chart
+strike_rate_bar_chart <- ggplot(average_strike_rates, aes(x = Match_Type, y = Average_Strike_Rate, fill = player_type)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(
+    x = "Match Type",
+    y = "Average Strike Rate",
+    fill = "Player Type"
+  ) +
+  theme_minimal()
+
+# Display the plot
+strike_rate_bar_chart
+
+```
+@tbl-average-strike-rate summarizes the average strike rates for each player type - numerically describing @fig-bar-analysis. 
+```{r}
+#| label: tbl-average-strike-rate
+#| tbl-cap: "Average Strike Rates by Player Type"
+#| echo: false
+#| warning: false
+#| message: false
+
+average_strike_rates <- final_data %>%
+  group_by(player_type) %>%
+  summarise(
+    `T20 Strike Rate` = mean(t20_strike_rate, na.rm = TRUE),
+    `ODI Strike Rate` = mean(odi_strike_rate, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(`Player Type` = player_type)
+
+# Display the summary table
+knitr::kable(average_strike_rates, row.names = FALSE)
+
+```
+
+
+# Model {#sec-model}
 
 ## Model Set-Up
 
+In order to investigate how T20 strike rates translate into ODI Strike rates, we fit a linear regression model. Our outcome variable is $Y_i$, for which we attempt use 3 explanatory variables to fit: T20 Strike Rate - $X_{1i}$, a dummy variable for player type (whether they are Top 100 or not) - $X_{2i}$, and an interaction term between the two, $X_{1i} \cdot X_{2i}$. 
+
+The mathematical representation of the model is as follows:
+
+$$
+Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 (X_{1i} \cdot X_{2i}) + \epsilon_i
+$$
+
+Where:
+
+- $Y_i$: The ODI strike rate of player $i$.
+
+- $X_{1i}$: The T20 strike rate of player $i$.
+
+- $X_{2i}$: A binary indicator of player type, where $X_{2i} = 1$ for "Top 100" players and $X_{2i} = 0$ for "Non-Top 100" players.
+
+- $X_{1i} \cdot X_{2i}$: The interaction term between T20 strike rate and player type.
+
+- $\beta_0$: The intercept, representing the predicted ODI strike rate for "Non-Top 100" players with a T20 strike rate of 0.
+
+- $\beta_1$: The main effect of T20 strike rate, representing the change in ODI strike rate for every 1-unit increase in T20 strike rate among "Non-Top 100" 
+
+- $\beta_2$: The main effect of player type, representing the difference in ODI strike rate between "Top 100" and "Non-Top 100" players when T20 strike rate is 0.
+
+- $\beta_3$: The interaction effect, representing how the relationship between T20 and ODI strike rates differs for "Top 100" players.
+
+- $\epsilon_i$: The residual error, assumed to be normally distributed with mean 0 and constant variance $\sigma^2$.
+
+We fit the model using the `lm()` function in R, implemented in the **Base R** package. 
+
+Our response variable is $Y$, ODI Strike Rate. Our predictors are the continuous variable T20 Strike Rate, $X_1$, the binary variable Player Type, $X_2$, and the interaction term $X_1 \cdot X_2$. 
+
 ## Model Justification
 
-# Results
+We attempt to capture the relationship between T20 Strike Rates and ODI Strike Rates, while accounting for player type using a dummy variable. Further, the inclusion of the interaction term directly tackles the research question, allowing us to test whether the relationship between T20 and ODI Strike Rates differs between groups - demonstrating potential differences in their adaptability.
 
-# Discussion
+In designing this model, we make the following assumptions: 
+
+1. Linearity in Coefficients: We assume that there exists a linear relationship between T20 Strike Rates and ODI Strike Rates. The coefficient $\beta_1$ captures this. Additionally, the effect of player type, $\beta_2$, is also assumed to be linear. Furthermore, the coefficient of the interaction term, $\beta_3$, is also modeled linearly. @sec-model-details runs a diagnostic plot to check for linearity. 
+
+2. Residuals are Normally Distributed: This is to say that the variability of ODI Strike Rate around the predicted value we fit using the model should be normally distributed, around 0. @sec-results contains a histogram of the residuals - the model assumes normality in the form of a bell shaped curve.
+
+3. Homoscedasticity: This assumption is built into the model to imply that the variance of the residuals, $\epsilon_i$, is constant across independent variables. That is to say that the spread of the residuals should be homogenous regardless of whether we look at the predictor $\beta1$ or $\beta2$. @sec-model-details runs a residuals vs. fitted values plot to check for homoscedasticity. 
+
+4. No Collinearlity: This assumption states that our predictor variables are not highly correlated with each other - this can make it difficult to interpret our coefficients are we are unsure regarding the interaction between the two, and if one is influencing the other.
+
+# Results {#sec-results}
+
+## Fitted Values
+
+To understand the results of the model, we begin by examining the fitted values. These are the predicted ODI Strike Rates for each player based on the T20 Strike Rates, Player Type, and their interaction. The fitted values are computed using the following equation:
+
+$$
+\hat{y} = \beta_0 + \beta_1 \cdot \text{T20 Strike Rate} + \beta_2 \cdot \text{Player Type Binary} + \beta_3 \cdot (\text{T20 Strike Rate} \times \text{Player Type Binary})
+$$
+where:
+
+- $\hat{y}$ is the predicted ODI Strike Rate,
+
+- $\beta_0$ (Intercept) = 54.87,
+
+- $\beta_1$ (T20 Strike Rate Coefficient) = 0.19,
+
+- $\beta_2$ (Player Type Binary Coefficient) = 19.36,
+
+- $\beta_3$ (Interaction Term Coefficient) = -0.038.
+
+The fitted values provide insight into how well the model captures the observed data. @tbl-fitted-values shows a sample of the observed ODI Strike Rates and their corresponding fitted values, grouped by Player Type.
+
+```{r}
+#| label: tbl-fitted-values
+#| tbl-cap: "Sample of Fitted Values and Observed ODI Strike Rates"
+#| echo: false
+#| warning: false
+#| message: false
+
+library(dplyr)
+library(knitr)
+
+# Add fitted values to the data
+model_data <- model_data %>%
+  mutate(
+    Fitted_Values = predict(strike_rate_model),
+    Residuals = odi_strike_rate - Fitted_Values
+  )
+
+# Sample 10 rows for display
+fitted_values_sample <- model_data %>%
+  select(striker, player_type, t20_strike_rate, odi_strike_rate, Fitted_Values, Residuals) %>%
+  sample_n(10) %>%
+  rename(
+    "Striker" = striker,
+    "Player Type" = player_type,
+    "T20 Strike Rate" = t20_strike_rate,
+    "ODI Strike Rate (Observed)" = odi_strike_rate,
+    "ODI Strike Rate (Fitted)" = Fitted_Values,
+    "Residuals" = Residuals
+  )
+
+# Display the table
+knitr::kable(fitted_values_sample, digits = 2, row.names = FALSE)
+```
+
+## Graphical Representation
+
+### Predicted vs. Observed ODI Strike Rates
+
+
+```{r}
+#| label: fig-predicted-vs-observed
+#| fig-cap: "Predicted vs. Observed ODI Strike Rates"
+#| fig.width: 6
+#| fig.height: 4
+#| fig.align: center
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-pos: "H"
+
+library(ggplot2)
+
+# Create a data frame for plotting
+model_output <- model_data %>%
+  mutate(
+    predicted_odi_strike_rate = predict(strike_rate_model),
+    residuals = residuals(strike_rate_model)
+  )
+
+# Plot Predicted vs Observed
+ggplot(model_output, aes(x = predicted_odi_strike_rate, y = odi_strike_rate)) +
+  geom_point(alpha = 0.6) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(
+    x = "Predicted ODI Strike Rate",
+    y = "Observed ODI Strike Rate"
+  ) +
+  theme_minimal()
+
+```
+
+### Effect of T20 Strike Rate on ODI Strike Rate by Player Type
+
+```{r}
+#| label: fig-t20-vs-odi-player-type
+#| fig-cap: "Effect of T20 Strike Rate on Predicted ODI Strike Rate by Player Type"
+#| fig.width: 6
+#| fig.height: 4
+#| fig.align: center
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-pos: "H"
+
+# Ensure correct data types
+model_output <- model_data %>%
+  mutate(
+    predicted_odi_strike_rate = predict(strike_rate_model),
+    player_type_binary = factor(player_type_binary, levels = c(0, 1), labels = c("Non-Top 100", "Top 100")),
+    t20_strike_rate = as.numeric(t20_strike_rate),
+    predicted_odi_strike_rate = as.numeric(predicted_odi_strike_rate)
+  )
+
+# Debugging: Check the structure of the model_output
+str(model_output)
+
+# Plot the effect of T20 Strike Rates by Player Type
+ggplot(model_output, aes(x = t20_strike_rate, y = predicted_odi_strike_rate, color = factor(player_type_binary))) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_color_manual(values = c("blue", "orange"), labels = c("Non-Top 100", "Top 100")) +
+  labs(
+    x = "T20 Strike Rate",
+    y = "Predicted ODI Strike Rate",
+    color = "Player Type"
+  ) +
+  theme_minimal()
+
+```
+
+### Residuals Distribution
+```{r}
+#| label: fig-residuals-distribution
+#| fig-cap: "Distribution of Residuals"
+#| fig.width: 6
+#| fig.height: 4
+#| fig.align: center
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-pos: "H"
+
+# Plot histogram of residuals
+ggplot(model_output, aes(x = residuals)) +
+  geom_histogram(binwidth = 2, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(
+    x = "Residuals",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+```
+# Discussion {#sec-discussion}
 
 ## First Discussion Point
 
@@ -62,16 +527,17 @@ Here we briefly describe the Bayesian analysis model used to investigate... Back
 
 \newpage
 
-# Appendix
+# Appendix {#sec-appendix}
 
-# Addtional Data Details
+# Addtional Data Details {#sec-data-details}
 
-# Model Details
+# Model Details {#sec-model-details}
 
 ## Posterior Predictive Check
 
 ## Diagnostics
 
+Residuals vs Fitted Values
 \newpage
 
 # References
