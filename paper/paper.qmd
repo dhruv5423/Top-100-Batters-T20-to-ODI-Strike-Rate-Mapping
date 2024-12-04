@@ -1,16 +1,16 @@
 ---
-title: "How Well Do Strike Rates Translate from T20 to ODI Formats for Top 100 vs. Non-Top 100 players?"
-subtitle: "My subtitle if needed"
+title: "Batting Performance Across Formats: Predicting ODI Strike Rates Using T20 Metrics"
+subtitle: "Top 100 Players Excel in Both Formats, but Adaptability Remains Uniform Across Groups"
 author: 
   - Dhruv Gupta
 thanks: "Code and data are available at: https://github.com/dhruv5423/Top-100-Batters-T20-to-ODI-Strike-Rate-Mapping"
 date: today
 date-format: long
 toc: true
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This paper investigates the extent to which batting strike rates in T20 cricket predict performance in the ODI format, focusing on differences between top 100 players and their peers. Using ball-by-ball data from 17,944 cricket matches, we construct a linear model to estimate ODI strike rates based on T20 performance, player type, and their interaction. Results reveal a positive relationship between T20 and ODI strike rates for all players, with top 100 players exhibiting consistently higher ODI rates. Surprisingly, the interaction term is not significant, suggesting that adaptability between formats may not differ substantially between player groups. These findings provide a clearer understanding of performance transferability across cricket formats and highlight the nuanced factors influencing player success."
 format: pdf
 number-sections: true
-bibliography: references.bib
+bibliography: paper_references.bib
 ---
 ```{r}
 #| include: false
@@ -92,28 +92,29 @@ The sport of cricket has evolved greatly in recent times. Traditionally played o
 
 A batter's strike rate is a key performance indicator of their ability to score runs. It is defined as the 'runs per 100 balls' they face. [@sportmakers] For example, if a batter scores 100 runs in 50 balls, their strike rate can be calculated to be 200. Given the differences in strategy between formats, it is common to expect differences in strike rates. Longer formats generally have lower strike rates, and shorter formats higher. But how well do strike rates translate across formats, particularly for top-performing players compared to the rest of field? This is of particular interest, not only in evaluating individual player adaptability, but in understanding how skills in one format can be extrapolated to another.
 
-This paper aims to investigate whether how well strike rates translate from T20 to ODI formats, for top-performing players compared to their peers. Specifically, we aim to estimate the difference in ODI strike rate attributable to 1) T20 Strike Rates, 2) Player Group (whether they are a top performing batter or not), and 3) the interaction between the two factors. Our estimate is the conditional effect of T20 Strike Rate on ODI Strike Rate, adjusted for player type, while accounting for player-specific variability.
+In this paper, we examine how T20 batting strike rates predict ODI performance, focusing on differences between top-performing players and their peers. We model ODI strike rates using T20 strike rates, player type (top 100 or non-top 100), and their interaction, analyzing ball-by-ball data from nearly 17,944 matches. Our findings reveal that while T20 strike rates positively correlate with ODI performance, the interaction term suggests that adaptability does not differ significantly between top 100 players and others. This challenges the assumption that top players are uniquely skilled at transferring their performance between formats.
 
-
-Estimand
-
-Results
-
-Broader Context
-
-The rest of paper is structured as follows..
+These findings are important for talent evaluation and team selection strategies in cricket. By quantifying the relationship between T20 and ODI performance, this research provides clarity on the dynamics of skill transferability. The rest of paper is structured as follows: @sec-data contains information regarding data selection and sourcing, samples of the raw data, a description of the cleaning process, and an example of the cleaned analysis data. @sec-model contains the model used in this paper - the set up, the estimator, and the justification and assumptions used to design it. @sec-results provides a summary of the regression output, fitted values for the model, and graphical representation of the outcome variable. @sec-discussion is a discussion, analyzing the coefficients the model predicts, intepreting the graphs in @sec-results, and using literature to draw broader conclusions regarding our findings. It also discusses key limitations in the model. @sec-appendix includes details on how to download the data and challenges with regards to sampling and observing cricket data.
 
 # Data {#sec-data}
+
+The statistical software R, [@citeR], is used throughout the paper to download, clean, and analyse the data. Additionally, many packages within the Tidyverse, [@tidyverse], Arrow, [@R-arrow], and KableExtra, [@R-kableExtra] are used.
 
 ## Data Selection and Sourcing
 
 Data used in this paper has been sourced from the reputable cricket database, CricSheet, [@cricsheet]. Created by Stephen Rushe, CricSheet is an open-source platform providing detail ball-by-ball data for 17,944 cricket matches. Contained in the database were 2,858 One Day International matches and 3,856 T20 International matches. This paper focuses on the male cricket matches, with 2,391 Male ODIs and 2,499 Male T20 match data downloaded as CSV files. This data set is particularly well-suited for this study because it ensures consistent measurement across matches, detailed coverage of player-level performance, and a large sample size, enabling robust statistical analysis of performance differences across formats.
 
-Additional details on the data selection process and a step-by-step guide to access and download the data are provided in [@sec-data-details].
+Additional details on the data selection process and a step-by-step guide to access and download the data are provided in the appendix [@sec-appendix].
+
+## Measurement
+
+The dataset used in this research is an organised and quantitative attempt to capture real-world cricketing phenomena, specifically player performance in the T20 and ODI formats. The data on CricSheet is derived from genuine ball-by-ball records of cricket matches, which are meticulously documented by official scorers throughout games. Each element in the dataset represents an observable event from a match, such as a ball delivered, runs scored, or wicket taken. This is a detailed, play-by-play breakdown of the game.
+
+The process of converting these real-world cricketing occurrences into dataset entries begins with match officials and scorers recording the results of each ball. CricSheet standardised and digitised these logs into CSV files. Key variables including strike rate, player type, and total balls faced, were derived directly from these raw observations. For example, strike rate is calculated as the ratio of runs scored to balls faced, multiplied by 100—a straightforward transformation of raw data into a meaningful metric.
 
 ## Raw Data
 
-Below are samples from the raw data regarding ODI matches after all raw csv files of individual match data were combined. The data is split into logical groups for clarity, but are all part of the same data frame.
+Below are samples from the raw data regarding ODI matches after all raw csv files of individual match data were combined. The data is split into logical groups for clarity, but are all part of the same data frame. 
 
 ### Match Information
 
@@ -312,7 +313,7 @@ knitr::kable(average_strike_rates, row.names = FALSE)
 
 # Model {#sec-model}
 
-## Model Set-Up
+## Model Set-Up {#sec-model-setup}
 
 In order to investigate how T20 strike rates translate into ODI Strike rates, we fit a linear regression model. Our outcome variable is $Y_i$, for which we attempt use 3 explanatory variables to fit: T20 Strike Rate - $X_{1i}$, a dummy variable for player type (whether they are Top 100 or not) - $X_{2i}$, and an interaction term between the two, $X_{1i} \cdot X_{2i}$. 
 
@@ -352,15 +353,37 @@ We attempt to capture the relationship between T20 Strike Rates and ODI Strike R
 
 In designing this model, we make the following assumptions: 
 
-1. Linearity in Coefficients: We assume that there exists a linear relationship between T20 Strike Rates and ODI Strike Rates. The coefficient $\beta_1$ captures this. Additionally, the effect of player type, $\beta_2$, is also assumed to be linear. Furthermore, the coefficient of the interaction term, $\beta_3$, is also modeled linearly. @sec-model-details runs a diagnostic plot to check for linearity. 
+1. Linearity in Coefficients: We assume that there exists a linear relationship between T20 Strike Rates and ODI Strike Rates. The coefficient $\beta_1$ captures this. Additionally, the effect of player type, $\beta_2$, is also assumed to be linear. Furthermore, the coefficient of the interaction term, $\beta_3$, is also modeled linearly. 
 
 2. Residuals are Normally Distributed: This is to say that the variability of ODI Strike Rate around the predicted value we fit using the model should be normally distributed, around 0. @sec-results contains a histogram of the residuals - the model assumes normality in the form of a bell shaped curve.
 
-3. Homoscedasticity: This assumption is built into the model to imply that the variance of the residuals, $\epsilon_i$, is constant across independent variables. That is to say that the spread of the residuals should be homogenous regardless of whether we look at the predictor $\beta1$ or $\beta2$. @sec-model-details runs a residuals vs. fitted values plot to check for homoscedasticity. 
+3. Homoscedasticity: This assumption is built into the model to imply that the variance of the residuals, $\epsilon_i$, is constant across independent variables. That is to say that the spread of the residuals should be homogenous regardless of whether we look at the predictor $\beta1$ or $\beta2$.
 
 4. No Collinearlity: This assumption states that our predictor variables are not highly correlated with each other - this can make it difficult to interpret our coefficients are we are unsure regarding the interaction between the two, and if one is influencing the other.
 
 # Results {#sec-results}
+
+## Regression Summary
+
+@tbl-regression-summary presents the coefficients from the linear regression model.  
+```{r}
+#| label: tbl-regression-summary
+#| tbl-cap: "Regression Coefficients for the Model"
+#| echo: false
+#| warning: false
+#| message: false
+
+library(broom)  # For cleaning regression results
+
+# Extract regression summary
+regression_summary <- broom::tidy(strike_rate_model)
+
+# Rename columns for clarity
+colnames(regression_summary) <- c("Term", "Estimate", "Standard Error", "t-value", "p-value")
+
+# Display the regression summary as a table
+knitr::kable(regression_summary)
+```
 
 ## Fitted Values
 
@@ -400,10 +423,10 @@ model_data <- model_data %>%
     Residuals = odi_strike_rate - Fitted_Values
   )
 
-# Sample 10 rows for display
+# Sample 5 rows for display
 fitted_values_sample <- model_data %>%
   select(striker, player_type, t20_strike_rate, odi_strike_rate, Fitted_Values, Residuals) %>%
-  sample_n(10) %>%
+  sample_n(5) %>%
   rename(
     "Striker" = striker,
     "Player Type" = player_type,
@@ -421,7 +444,7 @@ knitr::kable(fitted_values_sample, digits = 2, row.names = FALSE)
 
 ### Predicted vs. Observed ODI Strike Rates
 
-
+@fig-predicted-vs-observed evaluates the accuracy of the model by comparing the predicted ODI Strike Rates to the actual observed values.  
 ```{r}
 #| label: fig-predicted-vs-observed
 #| fig-cap: "Predicted vs. Observed ODI Strike Rates"
@@ -454,46 +477,11 @@ ggplot(model_output, aes(x = predicted_odi_strike_rate, y = odi_strike_rate)) +
 
 ```
 
-### Effect of T20 Strike Rate on ODI Strike Rate by Player Type
-
-```{r}
-#| label: fig-t20-vs-odi-player-type
-#| fig-cap: "Effect of T20 Strike Rate on Predicted ODI Strike Rate by Player Type"
-#| fig.width: 6
-#| fig.height: 4
-#| fig.align: center
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-pos: "H"
-
-# Ensure correct data types
-model_output <- model_data %>%
-  mutate(
-    predicted_odi_strike_rate = predict(strike_rate_model),
-    player_type_binary = factor(player_type_binary, levels = c(0, 1), labels = c("Non-Top 100", "Top 100")),
-    t20_strike_rate = as.numeric(t20_strike_rate),
-    predicted_odi_strike_rate = as.numeric(predicted_odi_strike_rate)
-  )
-
-# Debugging: Check the structure of the model_output
-str(model_output)
-
-# Plot the effect of T20 Strike Rates by Player Type
-ggplot(model_output, aes(x = t20_strike_rate, y = predicted_odi_strike_rate, color = factor(player_type_binary))) +
-  geom_point(alpha = 0.6) +
-  geom_smooth(method = "lm", se = FALSE) +
-  scale_color_manual(values = c("blue", "orange"), labels = c("Non-Top 100", "Top 100")) +
-  labs(
-    x = "T20 Strike Rate",
-    y = "Predicted ODI Strike Rate",
-    color = "Player Type"
-  ) +
-  theme_minimal()
-
-```
+\newpage
 
 ### Residuals Distribution
+
+@fig-residuals-distribution assesses the assumption of normally distributed residuals by visualizing the spread of residuals around zero, in the form of a histogram.
 ```{r}
 #| label: fig-residuals-distribution
 #| fig-cap: "Distribution of Residuals"
@@ -517,28 +505,74 @@ ggplot(model_output, aes(x = residuals)) +
 ```
 # Discussion {#sec-discussion}
 
-## First Discussion Point
+## Intepretation of Model Coefficients
 
-## Second Discussion Point 
+The linear regression model estimates the relationship between T20 and ODI strike rates while accounting for player type. From @tbl-regression-summary, we can use the coefficients from our model to generate the following:
 
-## Third Discussion Point
+$$
+\hat{y} = 54.87+ 0.19\cdot \text{T20 Strike Rate} + 19.36\cdot \text{Player Type Binary} - 0.037 \cdot (\text{T20 Strike Rate} \times \text{Player Type Binary})
+$$
 
-## Weaknesses and Next Steps
+The intercept, $\beta_0$, indicates that the expected strike rate for a non-top 100 player in an ODI match is 54.87. That is to say, if faced with 100 balls, the average non-top 100 player scores almost 55 runs. The coefficient $\beta_1$ = 0.19 suggests that, on average, a one-unit increase in T20 strike rate is associated with a 0.19-unit increase in ODI strike rate for non-top players, statistically significant at p = 0.002. This positive relationship highlights that higher T20 strike rates generally correspond to better performance in ODIs for these players. 
 
+Interestingly, we observe that our dummy variable, 'Player Type Binary', has a coefficient $\beta_2$ = 19.36. This reflects the average difference in ODI strike rates between top and non-top players, controlling for T20 strike rate. Although this difference is not statistically significant (p = 0.185), it provides an approximate measure of the expected performance gap. As expected, higher skilled players tend to score runs at a higher rate. 
+
+The interaction term has a coefficient $\beta_3$ = -0.037, which is not statistically significant (p = 0.737). From the predictions of the models we can reasonably say that there is no evidence that the relationship between T20 strike rates and ODI strike rates differs between top performing players and others. According to our model, what is a better predictor of success is the skill level that top performing batsmen exhibit. 
+
+## Intepretation of Graphs
+
+@fig-predicted-vs-observed shows that most data points are clustered around the 45 degree line. This demonstrates that the model captures much of the variability in ODI strike rates. There are however, some outliers that might indicate endogeneity or other confounding variables. @fig-residuals-distribution show that the value of our residuals are roughly normally distributed, and centered around zero. This is in line with Assumption 2 in @sec-model-setup, and we can be reasonably confident that our model predictions are unbiased on average. However, there are some outliers towards the tails of the curve, potentially indicating the model's limitation in capturing these extreme values.
+
+## Broader Context
+
+The analysis done in this paper highlights the transferability between T20 performance and ODI performance. With a high degree of confidence we can say that higher T20 strike rates will generally result in high ODI strike rates, for all players - regardless of whether they are a top performing player or not. As we expect, top players exhibit a much higher strike rate than non top 100 players in ODI matches - but the lack of a significant interaction term tells us that our hypothesis was misguided. The model tells us that unintuitively, top players may not show any additional 'adaptability' separating them from their peers. Additionally, the low value of the coefficient $\beta_1$ indicates that it is quite difficult to increase ODI strike rate. For a given batsman's strike rate to increase by 1 run per 100 balls, the model predicts that they would need more than 5 runs per 100 balls in the T20 format. 
+
+The findings of this study align with existing literature that emphasizes the interconnectedness of cricket formats and the transferability of batting skills. By highlighting the positive correlation between T20 and ODI strike rates, this research contributes to a deeper understanding of how modern batting techniques and strategies are evolving in response to the demands of different formats.
+
+## Limitations
+
+There are a fair amount limitations that are present in this model. First and foremost, the model uses strike rate as the sole predictor of batting performance - a top 100 player was defined purely off of strike rate. This approach ignores other critical aspects of batting performance, such as average runs scored, consistency, and the ability to perform under pressure. Players who may not have exceptionally high strike rates but consistently score runs over long periods could also be considered top performers in broader contexts. Thus, relying solely on strike rates could lead to an incomplete characterization of player quality.
+
+Furthermore, the model assumes linearity in the relationship between T20 and ODI strike rates, which might oversimplify the actual dynamics. Batting performance could exhibit non-linear trends, especially as players adapt their approach to match contexts or as they age and gain experience. These dynamics are not captured in the current framework
+
+There are more factors to consider. Environmntal and equipment constraints, such as pitch conditions, ball type, and equipment modifications, also play crucial roles in batting performance. These factors can affect a player's ability to adapt their skills across different formats and conditions. [@sage] A better model would likely incorporate these influences. 
 \newpage
 
 # Appendix {#sec-appendix}
 
-# Addtional Data Details {#sec-data-details}
+This section contains additional data details. 
 
-# Model Details {#sec-model-details}
+## How to Download the Data
+To replicate the analysis, follow these steps to download the datasets:
 
-## Posterior Predictive Check
+1. Navigate to CricSheet: Visit the CricSheet website.
+2. Locate Match Type Data:
+3. Click on the relevant format (e.g., ODI, T20).
+4. Download the ball-by-ball CSV files for each format under "Men’s Cricket" section.
+5. Extract the Files:
+6. The downloaded files will be in ZIP format.
+7. Extract all files into a folder labeled according to the match format (e.g., ODI_matches/, T20_matches/).
 
-## Diagnostics
+## Sampling and Observational Data:
 
-Residuals vs Fitted Values
-\newpage
+The analysis is based on data that is observational in nature - we did not conduct experiments or control any variables. Observational data in sports analytics often arises from recorded performance metrics rather than randomized experiments. While this approach provides real-world information, it comes with limitations such as unmeasured confounding variables and selection bias.
 
-# References
+Specific to cricket there may be challenges in samping: 
+
+- Inconsistent Match Representation: Players may participate in varying numbers of matches across formats, leading to unbalanced observations.
+- Player Inclusion Criteria: A threshold for balls faced was used to filter players with sufficient data (e.g., 200 balls for T20, 500 for ODI). This threshold minimizes noise but introduces potential bias by excluding players with fewer matches.
+- Team and Venue Effects: Factors like team strength or venue conditions could influence performance, but these are not explicitly modeled.
+
+## Idealized Methodology
+
+To address these challenges in future work, an idealized methodology could involve:
+
+- Stratified Sampling: Stratify players by their participation levels (e.g., high, medium, low match participation). This also ensures balanced representation across player groups for analysis.
+
+- Better Simulated Data: Simulate player performances under controlled conditions to test hypotheses. For example, simulate strike rates by varying contextual factors like opposition quality or pitch conditions.
+
+- Incorporating Hierarchical Models:Use hierarchical (mixed-effects) models to account for team and venue effects. This approach would allow for varying intercepts/slopes across teams or venues, reducing bias from unmeasured variables.
+
+
+# Citations
 
