@@ -10,7 +10,7 @@ The paper investigates how strike rates translate across T20 and ODI cricket for
   - `final_analysis_data.parquet`: The main dataset used for statistical analysis.
   - Combined T20 and ODI data in cleaned CSV format.
 - **`model`**: Stores the linear regression model used in the paper.
-- **`other`**: Includes supplementary files such as relevant literature, LLM chat interaction details, project sketches, and the datashet
+- **`other`**: Includes supplementary files such as relevant literature, LLM chat interaction details, project sketches, and the datasheet
 - **`paper`**: Contains the `paper.qmd` file and reference bibliography (`references.bib`) for generating the PDF version of the paper.
 - **`scripts`**: R scripts used for downloading, cleaning, and analyzing the data:
   - `download_combine.R`: Script for downloading and combining raw data.
