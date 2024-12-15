@@ -23,4 +23,4 @@ The paper investigates how strike rates translate across T20 and ODI cricket for
 
 Portions of this project were assisted by large language models (LLMs). Specifically:
 - ChatGPT 4o was used to assist in drafting sections of the paper, discussing methodology, and generating code snippets for visualizations and model diagnostics.
-- The complete chat history of LLM interactions is documented in `other/llms/usage.txt`.
+- The complete chat history of LLM interactions is documented in `other/llm_usage/usage.txt`.
