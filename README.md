@@ -1,7 +1,7 @@
 # Top 100 Batters T20 to ODI Strike Rate Mapping
 
 ## Overview
-This repository contains all the necessary files, scripts, and data for the project "Top-100 Batters: T20 to ODI Strike Rate Mapping". The interface Rstudio was used to create a Quarto document to publish the paper. 
+This repository contains all the necessary files, scripts, and data for the project "Top-100 Batters: T20 to ODI Strike Rate Mapping". The interface Rstudio was used to create a Quarto document to publish the paper using the programming language R. 
 
 The paper investigates how strike rates translate across T20 and ODI cricket formats for top-performing players and their peers. The dataset and associated analyses focus on player adaptability across formats using statistical modeling.
 
