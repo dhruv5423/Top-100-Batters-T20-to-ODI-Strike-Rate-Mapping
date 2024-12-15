@@ -5,7 +5,7 @@ This repository contains all the necessary files, scripts, and data for the proj
 
 The paper investigates how strike rates translate across T20 and ODI cricket formats for top-performing players and their peers. The dataset and associated analyses focus on player adaptability across formats using statistical modeling.
 
-**`data/raw_data`**: Contains the raw ball-by-ball data files for T20 and ODI matches, downloaded from [CricSheet](https://cricsheet.org/).
+- **`data/raw_data`**: Contains the raw ball-by-ball data files for T20 and ODI matches, downloaded from [CricSheet](https://cricsheet.org/).
 - **`data/processed_data`**: Contains the cleaned and processed datasets, including:
   - `final_analysis_data.parquet`: The main dataset used for statistical analysis.
   - Combined T20 and ODI data in cleaned CSV format.
